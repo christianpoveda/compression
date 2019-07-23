@@ -58,7 +58,6 @@ fn concat() {
     b.push(true);
     b.push(true);
 
-    // a = 1 11110101
     a.concat(b);
     assert_eq!(a, c);
 }
@@ -73,7 +72,7 @@ fn concat_long() {
     a.push(false);
     a.push(true);
 
-    // c = 1111111 11110101
+    // c = 10101111 1111111
     let mut c = a.clone();
     c.push(true);
     c.push(true);
@@ -86,7 +85,7 @@ fn concat_long() {
     c.push(true);
     c.push(true);
 
-    // b = 11 11111111
+    // b = 11111111 11
     let mut b = BitVec::new();
     b.push(true);
     b.push(true);
@@ -99,7 +98,6 @@ fn concat_long() {
     b.push(true);
     b.push(true);
 
-    // a = 1111111 11110101
     a.concat(b);
     assert_eq!(a, c);
 }
@@ -127,7 +125,6 @@ fn concat_complete() {
     b.push(true);
     b.push(true);
 
-    // a = 11110101
     a.concat(b);
     assert_eq!(a, c);
 }
