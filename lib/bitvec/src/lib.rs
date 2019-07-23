@@ -1,5 +1,4 @@
 use std::fmt;
-use std::u8::MAX;
 
 const BLOCK_SIZE: u8 = 8;
 const MAX_OFFSET: u8 = BLOCK_SIZE - 1;
@@ -102,49 +101,48 @@ impl BitVec {
             // each byte of the other vector by the current vector's offset and add it to the
             // current vector in a two step process.
 
-            // This is the number of unused bits in the last byte of the vector
-            let k = MAX_OFFSET - self.offset;
-            // This mask is used to extract the first `k` bits of each of the other vector
-            // bytes
-            let mask = MAX - 2u8.pow((BLOCK_SIZE - k).into()) + 1;
-            // This mask is used to extract the last `SIZE - k` bits of each one of the other vector
-            // bytes
-            let inv_mask = MAX - mask;
+            // This is the number of unused bits in the tail of `self`
+            let limit = MAX_OFFSET - self.offset;
 
             for byte in other.blocks.drain(..) {
-                // These are the first `k` bits of `byte` shifted to match with the last byte of
-                // the current vector.
-                let fst = (byte & mask).wrapping_shr((self.offset + 1).into());
-                // These are the last `SIZE - k` bits of `byte` shifted to be aligned
-                let lst = (byte & inv_mask).wrapping_shl(k.into());
+                // These are the first `limit` bits of `byte` aligned to start at
+                // `BLOCK_SIZE - limit`
+                let fst = byte.wrapping_shr((BLOCK_SIZE - limit).into());
+                // These are the last `BLOCK_SIZE - limit` bits of `byte` aligned to start at `0`
+                let lst = byte.wrapping_shl(limit.into());
                 // The current vector cannot be empty because it is misaligned. So we add the `fst`
-                // bits to the last byte
+                // bits to the tail of `self`
                 *self.blocks.last_mut().unwrap() += fst;
                 // Finally we push the remaining bits in `lst`. The offset does not change given
                 // that we are adding everything in blocks of SIZE.
                 self.blocks.push(lst);
             }
 
-            // Now we need to add the last byte of the other vector it is special because it has
-            // its own offset
+            // Now we have to deal with the tail of `other`
 
-            // This is the number of bits in `byte` that we can fit in the last byte of the current
-            // vector, the rest of the logic is almost the same as before
-            let k = (other.offset + 1).min(MAX_OFFSET - self.offset);
-            let mask = MAX - 2u8.pow((BLOCK_SIZE - k).into()) + 1;
-            let inv_mask = MAX - mask;
-            let fst = (byte & mask).wrapping_shr((self.offset + 1).into());
-            let lst = (byte & inv_mask).wrapping_shl(k.into());
+            // We are going to add the first `limit` bits of the tail of `other` to the tail of
+            // `self` in the same way as in the for loop above.
+            let fst = byte.wrapping_shr((BLOCK_SIZE - limit).into());
             *self.blocks.last_mut().unwrap() += fst;
 
-            if k <= other.offset {
-                // If there are remaining bits in `lst` we push them
-                self.blocks.push(lst);
-                // The offset needs to be updated to include the number of bits in `lst`
-                self.offset = other.offset - k;
+            // Now we need to decide what to do with the remaining bits in the tail of `other`.
+            // Here we check if there are in fact any remaining bits in the tail of `other`.
+            if other.offset + 1 <= limit {
+                // This means that there are less used bits in the tail of `other` than unused bits
+                // in the tail of `self`. Thus, we do not have any remaining bits to add to `self`.
+
+                // We increase `self.offset` by the number of added bits, which is exactly the
+                // number of used bits in the tail of `other`
+                self.offset += other.offset + 1;
             } else {
-                // Otherwise we increase the offset to include the number of bits in `fst`
-                self.offset += k;
+                // This means that there are some remaining bits in the tail of `other`. We have to
+                // extract them and push it to `self.blocks`
+                let lst = byte.wrapping_shl(limit.into());
+                self.blocks.push(lst);
+
+                // Ue update `self` offset to be `other.offset` minus the number of bytes that we
+                // already added from `fst`
+                self.offset = other.offset - limit;
             }
         }
     }
