@@ -1,36 +1,73 @@
-use bitvec::BitVec;
+use std::collections::HashMap;
+use std::hash::Hash;
 
-pub struct ShannonCoding {
-    map: Vec<BitVec>,
+use bitvec::BitVec;
+use compress::Code;
+
+pub struct ShannonCode<T> {
+    map: HashMap<T, BitVec>,
 }
 
-impl ShannonCoding {
-    pub fn from_freqs(freqs: &[usize]) -> Self {
-        let mut map = vec![BitVec::new(); freqs.len()];
-        Self::step(&mut map, freqs);
-        Coding { map }
+impl<T> ShannonCode<T>
+where
+    T: Hash + Clone + Eq,
+{
+    pub fn from_data(data: &[T]) -> Self {
+        let counts = Self::count_symbols(data);
+
+        let (freqs, mut vec): (Vec<usize>, Vec<BitVec>) = counts
+            .iter()
+            .map(|(_, count)| (count, BitVec::new()))
+            .unzip();
+
+        Self::step(&mut vec, &freqs);
+
+        ShannonCode {
+            map: counts
+                .into_iter()
+                .zip(vec.into_iter())
+                .map(|((symbol, _), bits)| (symbol, bits))
+                .collect(),
+        }
     }
 
-    fn step(map: &mut [BitVec], freqs: &[usize]) {
-        if map.len() <= 1 {
+    fn count_symbols(data: &[T]) -> Vec<(T, usize)> {
+        let mut counts: HashMap<T, usize> = HashMap::new();
+
+        for symbol in data {
+            match counts.get_mut(symbol) {
+                Some(count) => *count += 1,
+                None => {
+                    counts.insert(symbol.clone(), 1);
+                }
+            }
+        }
+
+        let mut counts: Vec<(T, usize)> = counts.into_iter().collect();
+        counts.sort_by_key(|x| x.1);
+        counts
+    }
+
+    fn step(vec: &mut [BitVec], freqs: &[usize]) {
+        if vec.len() <= 1 {
             return;
         }
 
         let index = Self::find_middle(freqs) + 1;
 
-        let (lower_map, upper_map) = map.split_at_mut(index);
+        let (lower_vec, upper_vec) = vec.split_at_mut(index);
         let (lower_fqs, upper_fqs) = freqs.split_at(index);
 
-        for bits in lower_map.iter_mut() {
+        for bits in lower_vec.iter_mut() {
+            bits.push(true);
+        }
+
+        for bits in upper_vec.iter_mut() {
             bits.push(false);
         }
 
-        for bits in upper_map.iter_mut() {
-            bec.push(true);
-        }
-
-        Self::step(lower_map, lower_fqs);
-        Self::step(upper_map, upper_fqs);
+        Self::step(lower_vec, lower_fqs);
+        Self::step(upper_vec, upper_fqs);
     }
 
     fn find_middle(freqs: &[usize]) -> usize {
@@ -53,8 +90,13 @@ impl ShannonCoding {
             .unwrap()
             .0
     }
+}
 
-    pub fn get(&self, pos: usize) -> Option<&BitVec> {
-        self.map.get(pos)
+impl<T> Code<T, BitVec> for ShannonCode<T>
+where
+    T: Eq + Hash,
+{
+    fn transform(&self, symbol: &T) -> Option<&BitVec> {
+        self.map.get(symbol)
     }
 }

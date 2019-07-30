@@ -1,12 +1,13 @@
 extern crate shannon;
 
-use shannon::Coding;
+use compress::Code;
+use shannon::ShannonCode;
 
 #[test]
 fn foo() {
-    let freqs = vec![15usize, 7, 6, 6, 5];
-    let coding = Coding::new(&freqs);
-    for i in 0..5 {
-        println!("{:?}", coding.get(i));
+    let data = b"AAAAAAAAAAAAAAABBBBBBBCCCCCCDDDDDDEEEEE";
+    let code = ShannonCode::from_data(data);
+    for s in b"ABCDE" {
+        println!("{} -> {:?}", *s as char, code.transform(s));
     }
 }
