@@ -1,12 +1,14 @@
 extern crate huffman;
 
-use huffman::HuffmanCoding;
+use compress::Code;
+use huffman::HuffmanCode;
 
 #[test]
 fn foo() {
-    let freqs = vec![40usize, 35, 20, 5];
-    let coding = HuffmanCoding::from_freqs(&freqs);
-    for i in 0..4 {
-        println!("{:?}", coding.get(i));
+    let data = b"A_DEAD_DAD_CEDED_A_BAD_BABE_A_BEADED_ABACA_BED";
+    // let data = b"AAAAAAAAAAAAAAABBBBBBBCCCCCCDDDDDDEEEEE";
+    let code = HuffmanCode::from_data(data);
+    for s in b"_ABCDE" {
+        println!("{} -> {:?}", *s as char, code.transform(s));
     }
 }

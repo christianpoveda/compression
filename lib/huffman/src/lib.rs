@@ -1,17 +1,62 @@
+use std::collections::HashMap;
+use std::hash::Hash;
+
 use bitvec::BitVec;
+use compress::Code;
 
 use Content::*;
 
-pub struct HuffmanCoding {
-    map: Vec<BitVec>,
+pub struct HuffmanCode<T> {
+    map: HashMap<T, BitVec>,
 }
 
-impl HuffmanCoding {
-    pub fn from_freqs(freqs: &[usize]) -> Self {
-        let tree = Node::from_freqs(freqs);
-        let mut map = vec![BitVec::new(); freqs.len()];
-        Self::step(&mut map, &tree);
-        HuffmanCoding { map }
+impl<T> Code<T, BitVec> for HuffmanCode<T>
+where
+    T: Eq + Hash,
+{
+    fn transform(&self, symbol: &T) -> Option<&BitVec> {
+        self.map.get(symbol)
+    }
+}
+
+impl<T> HuffmanCode<T>
+where
+    T: Clone + Hash + Eq,
+{
+    pub fn from_data(data: &[T]) -> Self {
+        let counts = Self::count_symbols(data);
+
+        let (freqs, mut vec): (Vec<usize>, Vec<BitVec>) = counts
+            .iter()
+            .map(|(_, count)| (count, BitVec::new()))
+            .unzip();
+
+        Self::step(&mut vec, &Node::from_freqs(&freqs));
+
+        HuffmanCode {
+            map: counts
+                .into_iter()
+                .zip(vec.into_iter())
+                .map(|((symbol, _), bits)| (symbol, bits))
+                .collect(),
+        }
+    }
+
+    fn count_symbols(data: &[T]) -> Vec<(T, usize)> {
+        let mut counts: HashMap<T, usize> = HashMap::new();
+
+        for symbol in data {
+            match counts.get_mut(symbol) {
+                Some(count) => *count += 1,
+                None => {
+                    counts.insert(symbol.clone(), 1);
+                }
+            }
+        }
+
+        let mut counts: Vec<(T, usize)> = counts.into_iter().collect();
+        counts.sort_by_key(|x| -(x.1 as isize));
+        counts
     }
 
     fn step(map: &mut [BitVec], tree: &Node) {
@@ -25,10 +70,6 @@ impl HuffmanCoding {
             }
             Leaf(_) => {}
         }
-    }
-
-    pub fn get(&self, pos: usize) -> Option<&BitVec> {
-        self.map.get(pos)
     }
 }
 
