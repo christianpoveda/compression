@@ -3,6 +3,7 @@ use std::marker::PhantomData;
 use bitvec::BitVec;
 
 pub trait Code<T, U> {
+    fn from_data(data: &[T]) -> Self;
     fn transform(&self, symbol: &T) -> Option<&U>;
 }
 

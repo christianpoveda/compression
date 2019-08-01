@@ -8,11 +8,15 @@ pub struct ShannonCode<T> {
     map: HashMap<T, BitVec>,
 }
 
-impl<T> ShannonCode<T>
+impl<T> Code<T, BitVec> for ShannonCode<T>
 where
-    T: Hash + Clone + Eq,
+    T: Eq + Hash + Clone,
 {
-    pub fn from_data(data: &[T]) -> Self {
+    fn transform(&self, symbol: &T) -> Option<&BitVec> {
+        self.map.get(symbol)
+    }
+
+    fn from_data(data: &[T]) -> Self {
         let counts = Self::count_symbols(data);
 
         let (freqs, mut vec): (Vec<usize>, Vec<BitVec>) = counts
@@ -30,7 +34,12 @@ where
                 .collect(),
         }
     }
+}
 
+impl<T> ShannonCode<T>
+where
+    T: Hash + Clone + Eq,
+{
     fn count_symbols(data: &[T]) -> Vec<(T, usize)> {
         let mut counts: HashMap<T, usize> = HashMap::new();
 
@@ -92,11 +101,3 @@ where
     }
 }
 
-impl<T> Code<T, BitVec> for ShannonCode<T>
-where
-    T: Eq + Hash,
-{
-    fn transform(&self, symbol: &T) -> Option<&BitVec> {
-        self.map.get(symbol)
-    }
-}

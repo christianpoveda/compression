@@ -12,18 +12,13 @@ pub struct HuffmanCode<T> {
 
 impl<T> Code<T, BitVec> for HuffmanCode<T>
 where
-    T: Eq + Hash,
+    T: Eq + Hash + Clone,
 {
     fn transform(&self, symbol: &T) -> Option<&BitVec> {
         self.map.get(symbol)
     }
-}
 
-impl<T> HuffmanCode<T>
-where
-    T: Clone + Hash + Eq,
-{
-    pub fn from_data(data: &[T]) -> Self {
+    fn from_data(data: &[T]) -> Self {
         let counts = Self::count_symbols(data);
 
         let (freqs, mut vec): (Vec<usize>, Vec<BitVec>) = counts
@@ -41,7 +36,12 @@ where
                 .collect(),
         }
     }
+}
 
+impl<T> HuffmanCode<T>
+where
+    T: Clone + Hash + Eq,
+{
     fn count_symbols(data: &[T]) -> Vec<(T, usize)> {
         let mut counts: HashMap<T, usize> = HashMap::new();
 
