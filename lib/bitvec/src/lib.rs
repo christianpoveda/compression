@@ -1,13 +1,14 @@
 use std::fmt;
 
-const BLOCK_SIZE: u8 = 8;
-const MAX_OFFSET: u8 = BLOCK_SIZE - 1;
-const LEADING_ONE: u8 = 1u8.rotate_right(1);
+type Block = u8;
+const BLOCK_SIZE: Block = 8;
+const MAX_OFFSET: Block = BLOCK_SIZE - 1;
+const LEADING_ONE: Block = (1 as Block).rotate_right(1);
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct BitVec {
-    blocks: Vec<u8>,
-    offset: u8,
+    blocks: Vec<Block>,
+    offset: Block,
 }
 
 impl fmt::Debug for BitVec {
