@@ -14,8 +14,12 @@ impl<T> Code<T, BitVec> for HuffmanCode<T>
 where
     T: Eq + Hash + Clone,
 {
-    fn transform(&self, symbol: &T) -> Option<&BitVec> {
-        self.map.get(symbol)
+    fn encode(&self, symbols: &[T]) -> Option<BitVec> {
+        let mut buffer = BitVec::new();
+        for symbol in symbols {
+            buffer.concat(self.map.get(symbol)?.clone());
+        }
+        Some(buffer)
     }
 
     fn from_data(data: &[T]) -> Self {

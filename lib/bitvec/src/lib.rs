@@ -36,6 +36,13 @@ impl BitVec {
         }
     }
 
+    pub fn from_block(block: Block, offset: Block) -> Self {
+        BitVec {
+            blocks: vec![block],
+            offset
+        }
+    }
+
     pub fn is_empty(&self) -> bool {
         // Hopefully, the offset should be maximal
         self.blocks.is_empty()

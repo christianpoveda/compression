@@ -8,12 +8,13 @@ pub struct ShannonCode<T> {
     map: HashMap<T, BitVec>,
 }
 
-impl<T> Code<T, BitVec> for ShannonCode<T>
-where
-    T: Eq + Hash + Clone,
-{
-    fn transform(&self, symbol: &T) -> Option<&BitVec> {
-        self.map.get(symbol)
+impl<T: Eq + Hash + Clone> Code<T, BitVec> for ShannonCode<T> {
+    fn encode(&self, symbols: &[T]) -> Option<BitVec> {
+        let mut buffer = BitVec::new();
+        for symbol in symbols {
+            buffer.concat(self.map.get(symbol)?.clone());
+        }
+        Some(buffer)
     }
 
     fn from_data(data: &[T]) -> Self {
