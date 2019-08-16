@@ -39,9 +39,31 @@ impl BitVec {
     pub fn from_block(block: Block, offset: Block) -> Self {
         BitVec {
             blocks: vec![block],
-            offset
+            offset,
         }
     }
+
+    pub fn from_bytes(mut bytes: Vec<u8>) -> Self {
+        loop {
+            match bytes.last() {
+                Some(block) => {
+                    let zeros = block.trailing_zeros();
+                    if zeros == 8 {
+                        bytes.pop().unwrap();
+                    } else {
+                        return BitVec {
+                            blocks: bytes,
+                            offset: MAX_OFFSET - zeros as Block,
+                        };
+                    }
+                }
+                None => {
+                    return Self::new();
+                }
+            }
+        }
+    }
+
 
     pub fn is_empty(&self) -> bool {
         // Hopefully, the offset should be maximal
